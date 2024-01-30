@@ -4,6 +4,8 @@
 #include <pcl/features/fpfh_omp.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/search/impl/kdtree.hpp>
+#include <pcl/io/pcd_io.h>
+#include <string>
 
 #include <hdl_global_localization/ransac/ransac_pose_estimation.hpp>
 
@@ -26,13 +28,51 @@ pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr GlobalLocalizationEngineFPFH_RAN
 
   ROS_INFO_STREAM("FPFH Extraction: Search Radius(" << search_radius << ")");
   pcl::PointCloud<pcl::FPFHSignature33>::Ptr features(new pcl::PointCloud<pcl::FPFHSignature33>);
+
+  // Check if FPFH already computed and stored in a file
+  ROS_INFO_STREAM("Attempting to load FPFH Features");
+  if (load_features_from_file(features)){
+    return features;
+  }
+
+  ROS_INFO_STREAM("Computing and saving FPFH Features");
   pcl::FPFHEstimationOMP<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fest;
   fest.setRadiusSearch(search_radius);
   fest.setInputCloud(cloud);
   fest.setInputNormals(normals);
   fest.compute(*features);
-
+  
+  // save computed FPFH Points to a file
+  save_features_to_file(features);
+  
   return features;
+}
+
+std::string GlobalLocalizationEngineFPFH_RANSAC::get_feature_filepath(){
+  std::string map_filepath;
+  if (!(private_nh.getParam("/globalmap_server_nodelet/globalmap_pcd", map_filepath))){
+    ROS_ERROR_STREAM("Parameter /globalmap_server_nodelet/globalmap_pcd not found");
+    return "";
+  }
+  std::string feature_extension = "_FPFH_features.pcd";
+  size_t dotPosition = map_filepath.find_last_of('.');
+  map_filepath = map_filepath.substr(0, dotPosition);  // get rid of the .pcd
+  return map_filepath + feature_extension; // add extension to end and return it
+}
+
+void GlobalLocalizationEngineFPFH_RANSAC::save_features_to_file(pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr features){
+  std::string file_name = get_feature_filepath();
+  // save it
+  pcl::io::savePCDFileBinary(file_name, *features);
+}
+
+bool GlobalLocalizationEngineFPFH_RANSAC::load_features_from_file(pcl::PointCloud<pcl::FPFHSignature33>::Ptr features){
+  std::string file_name = get_feature_filepath();
+  if (pcl::io::loadPCDFile(file_name, *features) == -1) {
+    // failed to lead FPFH features from file
+    return false;
+  }
+  return true;
 }
 
 void GlobalLocalizationEngineFPFH_RANSAC::set_global_map(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud) {

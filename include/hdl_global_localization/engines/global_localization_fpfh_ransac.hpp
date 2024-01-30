@@ -18,6 +18,9 @@ public:
 
 protected:
   pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr extract_fpfh(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud);
+  void save_features_to_file(pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr features);
+  bool load_features_from_file(pcl::PointCloud<pcl::FPFHSignature33>::Ptr features);
+  std::string get_feature_filepath();
 
 protected:
   ros::NodeHandle& private_nh;
