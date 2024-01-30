@@ -15,7 +15,14 @@ GlobalLocalizationEngineFPFH_Teaser::~GlobalLocalizationEngineFPFH_Teaser() {}
 
 void GlobalLocalizationEngineFPFH_Teaser::set_global_map(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud) {
   this->global_map = cloud;
-  this->global_map_features = extract_fpfh(cloud);
+  
+  // get global map fpfh features
+  if (!load_features_from_file()){
+    // features not found or failed to load
+    this->global_map_features = extract_fpfh(cloud);
+    save_features_to_file(this->global_map_features);
+  }
+  // global_map_features has the according features assigned now
 
   evaluater.reset(new MatchingCostEvaluaterFlann());
   evaluater->set_target(this->global_map, private_nh.param<double>("ransac/max_correspondence_distance", 1.0));

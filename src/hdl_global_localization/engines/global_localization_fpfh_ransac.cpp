@@ -29,21 +29,11 @@ pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr GlobalLocalizationEngineFPFH_RAN
   ROS_INFO_STREAM("FPFH Extraction: Search Radius(" << search_radius << ")");
   pcl::PointCloud<pcl::FPFHSignature33>::Ptr features(new pcl::PointCloud<pcl::FPFHSignature33>);
 
-  // Check if FPFH already computed and stored in a file
-  ROS_INFO_STREAM("Attempting to load FPFH Features");
-  if (load_features_from_file(features)){
-    return features;
-  }
-
-  ROS_INFO_STREAM("Computing and saving FPFH Features");
   pcl::FPFHEstimationOMP<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fest;
   fest.setRadiusSearch(search_radius);
   fest.setInputCloud(cloud);
   fest.setInputNormals(normals);
   fest.compute(*features);
-  
-  // save computed FPFH Points to a file
-  save_features_to_file(features);
   
   return features;
 }
@@ -64,20 +54,33 @@ void GlobalLocalizationEngineFPFH_RANSAC::save_features_to_file(pcl::PointCloud<
   std::string file_name = get_feature_filepath();
   // save it
   pcl::io::savePCDFileBinary(file_name, *features);
+  ROS_INFO_STREAM("Features saved successfully to " << file_name);
 }
 
-bool GlobalLocalizationEngineFPFH_RANSAC::load_features_from_file(pcl::PointCloud<pcl::FPFHSignature33>::Ptr features){
+bool GlobalLocalizationEngineFPFH_RANSAC::load_features_from_file(){
   std::string file_name = get_feature_filepath();
+  pcl::PointCloud<pcl::FPFHSignature33>::Ptr features(new pcl::PointCloud<pcl::FPFHSignature33>);
   if (pcl::io::loadPCDFile(file_name, *features) == -1) {
     // failed to lead FPFH features from file
     return false;
   }
+  // file with fpfh data exists, take it from here
+  ROS_INFO_STREAM("Features loaded successfully from " << file_name);
+  global_map_features = features;
   return true;
 }
 
 void GlobalLocalizationEngineFPFH_RANSAC::set_global_map(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud) {
   global_map = cloud;
-  global_map_features = extract_fpfh(cloud);
+  
+  // get global map fpfh features
+  if (!load_features_from_file()){
+    // features not found or failed to load
+    global_map_features = extract_fpfh(cloud);
+    save_features_to_file(global_map_features);
+  }
+  // global_map_features has the according features assigned now
+  
 
   ransac.reset(new RansacPoseEstimation<pcl::FPFHSignature33>(private_nh));
   ransac->set_target(global_map, global_map_features);
