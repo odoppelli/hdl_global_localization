@@ -40,14 +40,18 @@ pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr GlobalLocalizationEngineFPFH_RAN
 
 std::string GlobalLocalizationEngineFPFH_RANSAC::get_feature_filepath(){
   std::string map_filepath;
+  double norm_radius = private_nh.param<double>("fpfh/normal_estimation_radius", 2.0);
+  double fpfh_radius = private_nh.param<double>("fpfh/search_radius", 8.0);
   if (!(private_nh.getParam("/globalmap_server_nodelet/globalmap_pcd", map_filepath))){
     ROS_ERROR_STREAM("Parameter /globalmap_server_nodelet/globalmap_pcd not found");
     return "";
   }
-  std::string feature_extension = "_FPFH_features.pcd";
+  std::string norm_r_string = std::to_string((int)std::round(norm_radius));
+  std::string fpfh_r_string = std::to_string((int)std::round(fpfh_radius));
+  std::string feature_extension = "_FPFH_features";
   size_t dotPosition = map_filepath.find_last_of('.');
   map_filepath = map_filepath.substr(0, dotPosition);  // get rid of the .pcd
-  return map_filepath + feature_extension; // add extension to end and return it
+  return map_filepath + feature_extension + "_n" + norm_r_string + "f" + fpfh_r_string + ".pcd" ; // add extension to end and return it
 }
 
 void GlobalLocalizationEngineFPFH_RANSAC::save_features_to_file(pcl::PointCloud<pcl::FPFHSignature33>::ConstPtr features){
