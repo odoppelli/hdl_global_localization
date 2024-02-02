@@ -9,4 +9,8 @@
 
 
   <node pkg="hdl_global_localization" type="hdl_global_localization_node" name="hdl_global_localization" output="screen" />
+
+  <!-- Node Service: Set Ransac bounding box-->
+  <node pkg="hdl_global_localization" type="set_ransac_box_server" name="set_ransac_box_server" output="screen"/>
+
 </launch>

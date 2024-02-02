@@ -1,0 +1,8 @@
+float64 x_mid
+float64 y_mid
+float64 z_mid
+float64 x_span
+float64 y_span
+float64 z_span
+---
+bool executed_successfully

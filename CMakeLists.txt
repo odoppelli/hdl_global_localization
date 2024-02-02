@@ -47,6 +47,7 @@ add_service_files(
   SetGlobalLocalizationEngine.srv
   SetGlobalMap.srv
   QueryGlobalLocalization.srv
+  SetRansacBox.srv
 )
 generate_messages(
   DEPENDENCIES std_msgs sensor_msgs geometry_msgs
@@ -123,3 +124,7 @@ add_dependencies(hdl_global_localization_test ${PROJECT_NAME}_gencpp)
 target_link_libraries(hdl_global_localization_test
   ${catkin_LIBRARIES}
 )
+
+add_executable(set_ransac_box_server src/set_ransac_box_server.cpp)
+add_dependencies(set_ransac_box_server ${PROJECT_NAME}_gencpp)
+target_link_libraries(set_ransac_box_server ${catkin_LIBRARIES})
